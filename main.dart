@@ -33,17 +33,18 @@ class HomePage extends StatelessWidget {
                 children: [
                   // Movie image
                   SizedBox(
-                    height: 600,
+                    height: 700,
                     width: double.infinity,
                     child: Image.network(
-                      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9ENIbAqrjQKaUs_4YKAWvcFarAGriPTa6YEbO2-SNPZZjmzYwIfaXXA0&s=10',
+                      'https://cdn.marvel.com/content/2x/smbnd_online_1400x2100_hoodie_02.webp',
                       fit: BoxFit.cover,
+                      alignment: const Alignment(0, 0.2),
                     ),
                   ),
 
                   // Dark gradient
                   Container(
-                    height: 600,
+                    height: 700,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
@@ -99,7 +100,9 @@ class HomePage extends StatelessWidget {
                         categoryButton('TV Shows'),
                         const SizedBox(width: 8),
                         categoryButton('Movies'),
-                        const SizedBox(width: 8),
+
+                        const Spacer(),
+
                         categoryButton('Categories ↓'),
                       ],
                     ),
