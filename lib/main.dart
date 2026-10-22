@@ -5,12 +5,13 @@ import 'package:cs_elective_2/pages/InheritedWidget.dart';
 import 'package:cs_elective_2/pages/Provider.dart';
 import 'package:cs_elective_2/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 import 'Counter.dart';
 import 'theme/app_theme.dart';
 
 void main() {
-  runApp(ThemeManager(child: const MyApp()));
+  runApp(ProviderScope(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

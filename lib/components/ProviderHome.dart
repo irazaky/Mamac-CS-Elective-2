@@ -1,21 +1,25 @@
 import 'package:cs_elective_2/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cs_elective_2/riverpod/user_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ProviderHome extends StatelessWidget {
+class ProviderHome extends ConsumerWidget {
   const ProviderHome({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final profile = userProvider.profile;
+  Widget build(BuildContext context, WidgetRef ref) {
+    // final userProvider = Provider.of<UserProvider>(context);
+    // final profile = userProvider.profile;
+
+    final user = ref.watch(userProvider);
     return Scaffold(
       body:  Center(
         child: Column(
           children: [
             Text(
               // context.watch<UserProvider>().userName, 
-              userProvider.userName,
+              user.userName,
               style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -31,19 +35,19 @@ class ProviderHome extends StatelessWidget {
               children: [
                 TableRow(children: [
                   _buildLabel('Email'),
-                  _buildValue(profile.email),
+                  _buildValue(user.email),
                 ]),
                 TableRow(children: [
                   _buildLabel('First Name'),
-                  _buildValue(profile.firstName),
+                  _buildValue(user.firstName),
                 ]),
                 TableRow(children: [
                   _buildLabel('Last Name'),
-                  _buildValue(profile.lastName),
+                  _buildValue(user.lastName),
                 ]),
                 TableRow(children: [
                   _buildLabel('Bio'),
-                  _buildValue(profile.bio),
+                  _buildValue(user.bio),
                 ]),
 
               ]
