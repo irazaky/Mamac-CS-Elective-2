@@ -52,6 +52,13 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       }
     }
 
+    void _editProduct(Product p) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AddProductPage(product: p)),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Products'),
@@ -132,18 +139,35 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                   Positioned(
                                     top: 4,
                                     right: 4,
-                                    child: CircleAvatar(
-                                      radius: 18,
-                                      backgroundColor: Colors.white70,
-                                      child: IconButton(
-                                        padding: EdgeInsets.zero,
-                                        iconSize: 20,
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 18,
+                                          backgroundColor: Colors.white70,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            iconSize: 20,
+                                            icon: const Icon(
+                                              Icons.edit,
+                                              // color: Colors.blue,
+                                            ),
+                                            onPressed: () => _editProduct(p),
+                                          ),
                                         ),
-                                        onPressed: () => _confirmDelete(p),
-                                      ),
+                                        CircleAvatar(
+                                          radius: 18,
+                                          backgroundColor: Colors.white70,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            iconSize: 20,
+                                            icon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.redAccent,
+                                            ),
+                                            onPressed: () => _confirmDelete(p),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],

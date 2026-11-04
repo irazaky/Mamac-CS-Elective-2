@@ -2,6 +2,7 @@ import 'package:cs_elective_2/models/product.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductService {
+  // constructor that takes a SupabaseClient instance
   final SupabaseClient _client;
   ProductService(this._client);
 
@@ -44,6 +45,27 @@ class ProductService {
 
     if (deleted.isEmpty) {
       throw Exception('Product with id $id not found');
+    }
+  }
+
+  Future<void> updateProduct(Product product) async {
+    final updatedProds = await _client
+        .from('products')
+        .update({
+          'name': product.name,
+          'description': product.description,
+          'price': product.price,
+          'stock': product.stock,
+          'image_url': product.imageUrl,
+          'category_id': product.categoryId,
+        })
+        .eq('id', product.id)
+        .select();
+
+    if (updatedProds.isEmpty) {
+      throw Exception(
+        'Product with id ${product.id} not found or check table RLS.',
+      );
     }
   }
 }

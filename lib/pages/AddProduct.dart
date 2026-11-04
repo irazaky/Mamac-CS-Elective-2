@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/product_provider.dart';
 
 class AddProductPage extends ConsumerStatefulWidget {
-  const AddProductPage({super.key});
+  const AddProductPage({super.key, this.product});
+
+  final Product? product;
 
   @override
   ConsumerState<AddProductPage> createState() => _AddProductPageState();
@@ -21,6 +23,23 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
   int? _categoryId;
   bool _saving = false;
 
+  bool get _isEditing => widget.product != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final p = widget.product;
+    if (p != null) {
+      _name.text = p.name;
+      _desc.text = p.description ?? '';
+      _price.text = p.price.toString();
+      _stock.text = p.stock.toString();
+      _imageUrl.text = p.imageUrl ?? '';
+      _categoryId = p.categoryId;
+    }
+  }
+
   @override
   void dispose() {
     _name.dispose();
@@ -31,24 +50,41 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
     super.dispose();
   }
 
+  // now works for both adding and editing products
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
 
     try {
-      await ref
-          .read(productProvider.notifier)
-          .addProduct(
-            Product(
-              id: 0,
-              name: _name.text.trim(),
-              description: _desc.text.trim(),
-              price: double.parse(_price.text.trim()),
-              stock: int.parse(_stock.text.trim()),
-              categoryId: _categoryId!,
-              imageUrl: _imageUrl.text.trim(),
-            ),
-          );
+      final notifier = ref.read(productProvider.notifier);
+
+      // we have 2 methods for creating & updating, hence the if/else
+      if (_isEditing) {
+        await notifier.updateProduct(
+          widget.product!.copyWith(
+            name: _name.text.trim(),
+            description: _desc.text.trim(),
+            price: double.parse(_price.text.trim()),
+            stock: int.parse(_stock.text.trim()),
+            categoryId: _categoryId!,
+            imageUrl: _imageUrl.text.trim(),
+          ),
+        );
+      } else {
+        await ref
+            .read(productProvider.notifier)
+            .addProduct(
+              Product(
+                id: 0,
+                name: _name.text.trim(),
+                description: _desc.text.trim(),
+                price: double.parse(_price.text.trim()),
+                stock: int.parse(_stock.text.trim()),
+                categoryId: _categoryId!,
+                imageUrl: _imageUrl.text.trim(),
+              ),
+            );
+      }
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -65,7 +101,7 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Product')),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit Product' : 'Add Product')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
