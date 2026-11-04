@@ -7,8 +7,9 @@ final productServiceProvider = Provider<ProductService>((ref) {
   return ProductService(ref.watch(supabaseProvider));
 });
 
-final productProvider =
-    AsyncNotifierProvider<ProductNotifier, List<Product>>(ProductNotifier.new);
+final productProvider = AsyncNotifierProvider<ProductNotifier, List<Product>>(
+  ProductNotifier.new,
+);
 
 class ProductNotifier extends AsyncNotifier<List<Product>> {
   @override
@@ -18,7 +19,14 @@ class ProductNotifier extends AsyncNotifier<List<Product>> {
 
   Future<void> addProduct(Product product) async {
     await ref.read(productServiceProvider).addProduct(product);
-    state = AsyncValue.data(await ref.read(productServiceProvider).fetchProducts());
+    state = AsyncValue.data(
+      await ref.read(productServiceProvider).fetchProducts(),
+    );
   }
 
+  Future<void> deleteProduct(int id) async {
+    await ref.read(productServiceProvider).deleteProduct(id);
+    final currentProducts = state.value ?? [];
+    state = AsyncData(currentProducts.where((p) => p.id != id).toList());
+  }
 }

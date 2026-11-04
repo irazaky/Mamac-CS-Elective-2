@@ -17,6 +17,7 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
   final _desc = TextEditingController();
   final _price = TextEditingController();
   final _stock = TextEditingController();
+  final _imageUrl = TextEditingController();
   int? _categoryId;
   bool _saving = false;
 
@@ -26,6 +27,7 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
     _desc.dispose();
     _price.dispose();
     _stock.dispose();
+    _imageUrl.dispose();
     super.dispose();
   }
 
@@ -34,7 +36,9 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
     setState(() => _saving = true);
 
     try {
-      await ref.read(productProvider.notifier).addProduct(
+      await ref
+          .read(productProvider.notifier)
+          .addProduct(
             Product(
               id: 0,
               name: _name.text.trim(),
@@ -42,14 +46,15 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
               price: double.parse(_price.text.trim()),
               stock: int.parse(_stock.text.trim()),
               categoryId: _categoryId!,
-              imageUrl: '',
+              imageUrl: _imageUrl.text.trim(),
             ),
           );
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -58,7 +63,7 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
 
   @override
   Widget build(BuildContext context) {
-       final categoriesAsync = ref.watch(categoriesProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Add Product')),
       body: Padding(
@@ -69,34 +74,67 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
             children: [
               TextFormField(
                 controller: _name,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  prefixIcon: Icon(Icons.person), // left side, inside the field
+                  // suffixIcon: Icon(Icons.clear),    // right side, inside the field
+                  border: OutlineInputBorder(),
+                ),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Required' : null,
               ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _desc,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  prefixIcon: Icon(Icons.description),
+                  border: OutlineInputBorder(),
+                ),
               ),
+              const SizedBox(height: 8),
+
               TextFormField(
                 controller: _price,
-                decoration: const InputDecoration(labelText: 'Price'),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Price',
+                  prefixIcon: Icon(Icons.attach_money),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 validator: (v) {
                   final n = double.tryParse(v ?? '');
                   return (n == null || n < 0) ? 'Enter a valid price' : null;
                 },
               ),
+              const SizedBox(height: 8),
+
               TextFormField(
                 controller: _stock,
-                decoration: const InputDecoration(labelText: 'Stock'),
+                decoration: const InputDecoration(
+                  labelText: 'Stock',
+                  prefixIcon: Icon(Icons.inventory),
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (v) {
                   final n = int.tryParse(v ?? '');
                   return (n == null || n < 0) ? 'Enter a valid stock' : null;
                 },
               ),
-               const SizedBox(height: 8),
+              const SizedBox(height: 8),
+
+              TextFormField(
+                controller: _imageUrl,
+                decoration: const InputDecoration(
+                  labelText: 'Image URL',
+                  prefixIcon: Icon(Icons.image),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
               categoriesAsync.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -114,7 +152,11 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
                 ),
                 data: (categories) => DropdownButtonFormField<int>(
                   initialValue: _categoryId,
-                  decoration: const InputDecoration(labelText: 'Category'),
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    prefixIcon: Icon(Icons.category),
+                    border: OutlineInputBorder(),
+                  ),
                   items: [
                     for (final c in categories)
                       DropdownMenuItem(value: c.id, child: Text(c.name)),

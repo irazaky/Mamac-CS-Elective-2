@@ -5,8 +5,3 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 final supabaseProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
-
-final productServiceProvider = Provider<ProductService>((ref) {
-  final client = ref.watch(supabaseProvider); 
-  return ProductService(client);   
-});
