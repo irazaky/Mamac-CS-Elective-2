@@ -31,13 +31,7 @@ static const Color seedColor = Color(0xFF419A94);
   @override
   Widget build(BuildContext context) {
     final themeProvider = ThemeProvider.of(context);
-    return 
-    // MultiProvider(
-    //   providers: [
-    //     ChangeNotifierProvider(create: (context) => UserProvider()),
-    //   ],
-    //   child: 
-      
+    return       
       MaterialApp(
         title: 'Flutter Demo',
         debugShowCheckedModeBanner: false,

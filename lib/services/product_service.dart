@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:cs_elective_2/models/product.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,7 +16,7 @@ class ProductService {
           id: item['id'],
           name: item['name'],
           description: item['description'] ?? "N/A",
-      price: double.tryParse(item['price']?.toString() ?? '') ?? 0.0,
+          price: double.tryParse(item['price']?.toString() ?? '') ?? 0.0,
           stock: item['stock'],
           categoryId: item['category_id'] ?? 0,
           imageUrl: item['image_url'] ?? "insert fallback url img",

@@ -7,5 +7,6 @@ final supabaseProvider = Provider<SupabaseClient>((ref) {
 });
 
 final productServiceProvider = Provider<ProductService>((ref) {
-  return ProductService(ref.watch(supabaseProvider));
+  final client = ref.watch(supabaseProvider); 
+  return ProductService(client);   
 });
