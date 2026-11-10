@@ -1,8 +1,11 @@
 import 'package:cs_elective_2/models/product.dart';
 import 'package:cs_elective_2/pages/AddProduct.dart';
+import 'package:cs_elective_2/providers/category_provider.dart';
+import 'package:cs_elective_2/providers/product_filter_provider.dart';
 import 'package:cs_elective_2/providers/product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 
 class ProductsPage extends ConsumerStatefulWidget {
   const ProductsPage({super.key});
@@ -12,6 +15,39 @@ class ProductsPage extends ConsumerStatefulWidget {
 }
 
 class _ProductsPageState extends ConsumerState<ProductsPage> {
+  @override
+  final _search = TextEditingController();
+  Timer? _debounce;
+
+  // todo: add ui for search and category filtera
+
+  @override
+  void initState() {
+    super.initState();
+    _search.text = ref.read(productFilterProvider).search;
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {}); // so the clear (x) button appears/disappears
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      ref.read(productFilterProvider.notifier).setSearch(value);
+    });
+  }
+
+  void _clearFilters() {
+    _debounce?.cancel();
+    _search.text = '';
+    ref.read(productFilterProvider.notifier).reset();
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productProvider);
@@ -75,6 +111,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       ),
       body: Column(
         children: [
+          _buildFilterBar(),
           Expanded(
             child: productsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -204,6 +241,73 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    final filter = ref.watch(productFilterProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      child: Column(
+        children: [
+          TextField(
+            controller: _search,
+            onChanged: _onSearchChanged,
+            decoration: InputDecoration(
+              hintText: 'Search products',
+              isDense: true,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _search.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _search.clear();
+                        _onSearchChanged('');
+                      },
+                    ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          categoriesAsync.maybeWhen(
+            data: (categories) => SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: const Text('All'),
+                      selected: filter.categoryId == null,
+                      onSelected: (_) => ref
+                          .read(productFilterProvider.notifier)
+                          .setCategoryId(null),
+                    ),
+                  ),
+                  for (final c in categories)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(c.name),
+                        selected: filter.categoryId == c.id,
+                        onSelected: (_) => ref
+                            .read(productFilterProvider.notifier)
+                            .setCategoryId(c.id),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            orElse: () => const SizedBox(height: 40), // loading or error
           ),
         ],
       ),

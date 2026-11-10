@@ -6,11 +6,20 @@ class ProductService {
   final SupabaseClient _client;
   ProductService(this._client);
 
-  Future<List<Product>> fetchProducts() async {
-    final data = await _client
-        .from('products')
-        .select()
-        .order('created_at', ascending: false);
+  Future<List<Product>> fetchProducts({
+    String search = '',
+    int? categoryId,
+  }) async {
+    var query = _client.from('products').select();
+
+    final term = search.trim();
+    if (term.isNotEmpty) {
+      query = query.ilike('name', '%$term%');
+    }
+
+    if (categoryId != null) query = query.eq('category_id', categoryId);
+
+    final data = await query.order('created_at', ascending: false);
 
     return (data as List<dynamic>).map((item) {
       return Product(

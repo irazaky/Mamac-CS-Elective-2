@@ -1,3 +1,4 @@
+import 'package:cs_elective_2/providers/product_filter_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
@@ -14,7 +15,17 @@ final productProvider = AsyncNotifierProvider<ProductNotifier, List<Product>>(
 class ProductNotifier extends AsyncNotifier<List<Product>> {
   @override
   Future<List<Product>> build() {
-    return ref.read(productServiceProvider).fetchProducts();
+    final filter = ref.watch(productFilterProvider);
+    return ref
+        .read(productServiceProvider)
+        .fetchProducts(search: filter.search, categoryId: filter.categoryId);
+  }
+
+  Future<List<Product>> _fetch() {
+    final filter = ref.read(productFilterProvider);
+    return ref
+        .read(productServiceProvider)
+        .fetchProducts(search: filter.search, categoryId: filter.categoryId);
   }
 
   Future<void> addProduct(Product product) async {

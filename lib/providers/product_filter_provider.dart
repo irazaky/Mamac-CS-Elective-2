@@ -6,4 +6,19 @@ class ProductFilterNotifier extends Notifier<ProductFilter> {
   ProductFilter build() {
     return const ProductFilter();
   }
+
+  void setSearch(String search) {
+    state = ProductFilter(search: search, categoryId: state.categoryId);
+  }
+
+  void setCategoryId(int? categoryId) {
+    state = ProductFilter(search: state.search, categoryId: categoryId);
+  }
+
+  void reset() => state = const ProductFilter();
 }
+
+final productFilterProvider =
+    NotifierProvider<ProductFilterNotifier, ProductFilter>(
+      ProductFilterNotifier.new,
+    );

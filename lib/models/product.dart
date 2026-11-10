@@ -16,7 +16,7 @@ class Product {
     this.imageUrl,
     required this.categoryId,
   });
-
+  // [...product]
   // This method allows you to create a new instance of Product with some properties changed while keeping the rest the same
   Product copyWith({
     String? name,
