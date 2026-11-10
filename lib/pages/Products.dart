@@ -1,4 +1,6 @@
 import 'package:cs_elective_2/models/product.dart';
+import 'package:cs_elective_2/models/product_filter.dart';
+import 'package:cs_elective_2/models/product_page.dart';
 import 'package:cs_elective_2/pages/AddProduct.dart';
 import 'package:cs_elective_2/providers/category_provider.dart';
 import 'package:cs_elective_2/providers/product_filter_provider.dart';
@@ -18,6 +20,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   @override
   final _search = TextEditingController();
   Timer? _debounce;
+  RangeValues? _priceRange; // slider value while dragging, null = full range
 
   // todo: add ui for search and category filtera
 
@@ -45,6 +48,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   void _clearFilters() {
     _debounce?.cancel();
     _search.text = '';
+    setState(() => _priceRange = null);
     ref.read(productFilterProvider.notifier).reset();
   }
 
@@ -116,13 +120,15 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
             child: productsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Error: $e')),
-              data: (products) {
+              data: (productPage) {
+                final products = productPage.products;
                 if (products.isEmpty) {
-                  return const Center(child: Text('No products yet'));
+                  return const Center(child: Text('No products found'));
                 }
                 return RefreshIndicator(
                   onRefresh: () async {
                     ref.invalidate(productProvider);
+                    ref.invalidate(maxPriceProvider);
                     await ref.read(productProvider.future);
                   },
                   child: GridView.builder(
@@ -242,6 +248,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
               },
             ),
           ),
+          _buildPaginationBar(productsAsync),
         ],
       ),
     );
@@ -308,6 +315,81 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
               ),
             ),
             orElse: () => const SizedBox(height: 40), // loading or error
+          ),
+          _buildPriceSlider(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceSlider() {
+    final maxPrice = ref.watch(maxPriceProvider).value ?? 0;
+    if (maxPrice <= 0) return const SizedBox.shrink(); // no products / not loaded
+
+    final max = maxPrice.ceilToDouble();
+    // clamp in case the max price dropped (ex. after deleting the priciest product)
+    final saved = _priceRange ?? RangeValues(0, max);
+    final range = RangeValues(
+      saved.start.clamp(0, max).toDouble(),
+      saved.end.clamp(0, max).toDouble(),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Price: ₱${range.start.round()} - ₱${range.end.round()}',
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        RangeSlider(
+          values: range,
+          min: 0,
+          max: max,
+          labels: RangeLabels(
+            '₱${range.start.round()}',
+            '₱${range.end.round()}',
+          ),
+          // while dragging: only update the slider itself
+          onChanged: (values) => setState(() => _priceRange = values),
+          // when the user lets go: update the filter (this triggers the query)
+          onChangeEnd: (values) {
+            // if the slider is back to full range, remove the price filter
+            final isFull = values.start <= 0 && values.end >= max;
+            ref
+                .read(productFilterProvider.notifier)
+                .setPriceRange(
+                  isFull ? null : values.start.roundToDouble(),
+                  isFull ? null : values.end.roundToDouble(),
+                );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaginationBar(AsyncValue<ProductPage> productsAsync) {
+    final page = ref.watch(productFilterProvider).page;
+    final total = productsAsync.value?.total ?? 0;
+    final totalPages = total == 0 ? 1 : (total / productsPerPage).ceil();
+    final loading = productsAsync.isLoading;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: (page > 1 && !loading)
+                ? () => ref.read(productFilterProvider.notifier).setPage(page - 1)
+                : null,
+          ),
+          Text('Page $page of $totalPages'),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: (page < totalPages && !loading)
+                ? () => ref.read(productFilterProvider.notifier).setPage(page + 1)
+                : null,
           ),
         ],
       ),
