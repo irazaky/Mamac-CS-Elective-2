@@ -1,7 +1,9 @@
 import 'package:cs_elective_2/models/product.dart';
 import 'package:cs_elective_2/providers/category_provider.dart';
+import 'package:cs_elective_2/utils/error_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../providers/product_provider.dart';
 
 class AddProductPage extends ConsumerStatefulWidget {
@@ -22,6 +24,7 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
   final _imageUrl = TextEditingController();
   int? _categoryId;
   bool _saving = false;
+  bool _uploading = false;
 
   bool get _isEditing => widget.product != null;
 
@@ -36,7 +39,8 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
       _price.text = p.price.toString();
       _stock.text = p.stock.toString();
       _imageUrl.text = p.imageUrl ?? '';
-      _categoryId = p.categoryId;
+      // 0 means the category was deleted, so nothing is selected
+      _categoryId = p.categoryId == 0 ? null : p.categoryId;
     }
   }
 
@@ -48,6 +52,32 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
     _stock.dispose();
     _imageUrl.dispose();
     super.dispose();
+  }
+
+  // pick an image, upload it to Supabase Storage and put its link in the field
+  Future<void> _pickImage() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+    );
+    if (file == null) return;
+
+    setState(() => _uploading = true);
+    try {
+      final bytes = await file.readAsBytes();
+      final url = await ref
+          .read(productProvider.notifier)
+          .uploadImage(bytes, file.name);
+      if (mounted) setState(() => _imageUrl.text = url);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: ${errorMessage(e)}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
   }
 
   // now works for both adding and editing products
@@ -90,7 +120,7 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ).showSnackBar(SnackBar(content: Text('Failed: ${errorMessage(e)}')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -169,7 +199,32 @@ class _AddProductPageState extends ConsumerState<AddProductPage> {
                   prefixIcon: Icon(Icons.image),
                   border: OutlineInputBorder(),
                 ),
+                onChanged: (_) => setState(() {}), // refresh the preview
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _uploading ? null : _pickImage,
+                icon: _uploading
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.upload),
+                label: Text(_uploading ? 'Uploading...' : 'Upload image'),
+              ),
+              if (_imageUrl.text.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: SizedBox(
+                    height: 120,
+                    child: Image.network(
+                      _imageUrl.text.trim(),
+                      errorBuilder: (_, __, ___) =>
+                          const Center(child: Icon(Icons.broken_image)),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 8),
               categoriesAsync.when(
                 loading: () => const Padding(

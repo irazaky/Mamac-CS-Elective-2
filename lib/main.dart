@@ -3,6 +3,7 @@ import 'package:cs_elective_2/async_programming/Async.dart';
 import 'package:cs_elective_2/dart_syntax/Syntax.dart';
 import 'package:cs_elective_2/pages/InheritedWidget.dart';
 import 'package:cs_elective_2/pages/Products.dart';
+import 'package:cs_elective_2/pages/auth_gate.dart';
 import 'package:cs_elective_2/pages/Provider.dart';
 import 'package:cs_elective_2/providers/user_provider.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ static const Color seedColor = Color(0xFF419A94);
     final themeProvider = ThemeProvider.of(context);
     return       
       MaterialApp(
-        title: 'Flutter Demo',
+        title: 'Comics Shop',
         debugShowCheckedModeBanner: false,
         theme: lightTheme,
         darkTheme: darkTheme,
@@ -62,7 +63,7 @@ static const Color seedColor = Color(0xFF419A94);
       //           ),
       //         ),
       //       ),     
-       home: ProductsPage(),
+       home: const AuthGate(),
        //CounterPage()
         // SyntaxWidget(
         //    name2: 'Clark',

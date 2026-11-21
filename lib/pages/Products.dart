@@ -1,7 +1,14 @@
 import 'package:cs_elective_2/models/product.dart';
 import 'package:cs_elective_2/models/product_filter.dart';
 import 'package:cs_elective_2/models/product_page.dart';
+import 'package:cs_elective_2/components/CartIcon.dart';
 import 'package:cs_elective_2/pages/AddProduct.dart';
+import 'package:cs_elective_2/pages/AdminCategoriesPage.dart';
+import 'package:cs_elective_2/pages/AdminOrdersPage.dart';
+import 'package:cs_elective_2/pages/OrderHistoryPage.dart';
+import 'package:cs_elective_2/providers/auth_provider.dart';
+import 'package:cs_elective_2/providers/cart_provider.dart';
+import 'package:cs_elective_2/utils/error_message.dart';
 import 'package:cs_elective_2/providers/category_provider.dart';
 import 'package:cs_elective_2/providers/product_filter_provider.dart';
 import 'package:cs_elective_2/providers/product_provider.dart';
@@ -55,6 +62,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productProvider);
+    final isAdmin = ref.watch(isAdminProvider); // admin sees management buttons
 
     Future<void> _confirmDelete(Product p) async {
       final ok = await showDialog<bool>(
@@ -88,7 +96,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+        ).showSnackBar(SnackBar(content: Text('Delete failed: ${errorMessage(e)}')));
       }
     }
 
@@ -99,27 +107,83 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       );
     }
 
+    void _addToCart(Product p) {
+      final message = ref.read(cartProvider.notifier).add(p);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message ?? '${p.name} added to cart')),
+      );
+    }
+
+    final logoutButton = IconButton(
+      icon: const Icon(Icons.logout),
+      tooltip: 'Log out',
+      onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products'),
-        actions: [
-          IconButton(icon: const Icon(Icons.shopping_bag), onPressed: () {}),
-        ],
+        title: Text(isAdmin ? 'Products (Admin)' : 'Comics Shop'),
+        actions: isAdmin
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.category),
+                  tooltip: 'Categories',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminCategoriesPage()),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.receipt_long),
+                  tooltip: 'Orders',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminOrdersPage()),
+                  ),
+                ),
+                logoutButton,
+              ]
+            : [
+                IconButton(
+                  icon: const Icon(Icons.history),
+                  tooltip: 'My orders',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const OrderHistoryPage()),
+                  ),
+                ),
+                const CartIcon(),
+                logoutButton,
+              ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddProductPage()),
-        ),
-        child: const Icon(Icons.add),
-      ),
+      // only admins can add products
+      floatingActionButton: isAdmin
+          ? FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddProductPage()),
+              ),
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: Column(
         children: [
           _buildFilterBar(),
           Expanded(
             child: productsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(errorMessage(e)),
+                    TextButton(
+                      onPressed: () => ref.invalidate(productProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
               data: (productPage) {
                 final products = productPage.products;
                 if (products.isEmpty) {
@@ -138,6 +202,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
+                          childAspectRatio: 0.7,
                         ),
                     itemCount: products.length,
                     itemBuilder: (_, i) {
@@ -179,7 +244,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                           ),
                                         ),
 
-                                  Positioned(
+                                  if (isAdmin)
+                                    Positioned(
                                     top: 4,
                                     right: 4,
                                     child: Row(
@@ -231,11 +297,31 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text('₱${p.price.toStringAsFixed(2)}'),
-                                  if (p.stock < 5)
+                                  if (isAdmin) Text('Stock: ${p.stock}'),
+                                  if (p.stock <= 0)
+                                    const Text(
+                                      'Out of stock',
+                                      style: TextStyle(color: Colors.red),
+                                    )
+                                  else if (p.stock < 5)
                                     const Text(
                                       'Low stock',
                                       style: TextStyle(color: Colors.red),
                                     ),
+                                  // customers get "add to cart" instead of edit/delete
+                                  if (!isAdmin) ...[
+                                    const SizedBox(height: 4),
+                                    ElevatedButton.icon(
+                                      onPressed: p.stock > 0
+                                          ? () => _addToCart(p)
+                                          : null,
+                                      icon: const Icon(
+                                        Icons.add_shopping_cart,
+                                        size: 18,
+                                      ),
+                                      label: const Text('Add to cart'),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

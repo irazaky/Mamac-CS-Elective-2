@@ -13,3 +13,28 @@ final categoryServiceProvider = Provider<CategoryService>((ref) {
 final categoriesProvider = FutureProvider<List<Category>>((ref) {
   return ref.watch(categoryServiceProvider).fetchAll();
 });
+
+// admin actions. after each change we refetch the list
+final categoryActionsProvider = Provider<CategoryActions>((ref) {
+  return CategoryActions(ref);
+});
+
+class CategoryActions {
+  final Ref ref;
+  CategoryActions(this.ref);
+
+  Future<void> add(String name) async {
+    await ref.read(categoryServiceProvider).add(name);
+    ref.invalidate(categoriesProvider);
+  }
+
+  Future<void> rename(int id, String name) async {
+    await ref.read(categoryServiceProvider).rename(id, name);
+    ref.invalidate(categoriesProvider);
+  }
+
+  Future<void> delete(int id) async {
+    await ref.read(categoryServiceProvider).delete(id);
+    ref.invalidate(categoriesProvider);
+  }
+}

@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 
-final lightTheme = ThemeData(
-  brightness: Brightness.light,
-  primarySwatch: Colors.blue,
-  scaffoldBackgroundColor: Colors.white,
-  appBarTheme: const AppBarTheme(
-    backgroundColor: Color.fromARGB(255, 9, 210, 224),
-    foregroundColor: Colors.white,
-  ),
-);
+// comic book theme: red + blue, like a superhero cover
+const _comicRed = Color(0xFFC62828);
 
-final darkTheme = ThemeData(
-  brightness: Brightness.dark,
-  primarySwatch: Colors.blue,
-  scaffoldBackgroundColor: Colors.black,
-  appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.black,
-    foregroundColor: Colors.white,
-  ),
-);
+ThemeData _buildTheme(Brightness brightness) {
+  final scheme = ColorScheme.fromSeed(
+    seedColor: _comicRed,
+    brightness: brightness,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    appBarTheme: AppBarTheme(
+      backgroundColor: scheme.primary,
+      foregroundColor: scheme.onPrimary,
+    ),
+  );
+}
+
+final lightTheme = _buildTheme(Brightness.light);
+final darkTheme = _buildTheme(Brightness.dark);
