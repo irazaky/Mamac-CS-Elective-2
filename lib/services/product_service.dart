@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:cs_elective_2/models/product.dart';
 import 'package:cs_elective_2/models/product_filter.dart';
 import 'package:cs_elective_2/models/product_page.dart';
@@ -44,11 +45,11 @@ class ProductService {
       return Product(
         id: item['id'],
         name: item['name'],
-        description: item['description'] ?? "N/A",
+        description: item['description'],
         price: double.tryParse(item['price']?.toString() ?? '') ?? 0.0,
-        stock: item['stock'],
+        stock: item['stock'] ?? 0,
         categoryId: item['category_id'] ?? 0,
-        imageUrl: item['image_url'] ?? "insert fallback url img",
+        imageUrl: item['image_url'] as String?,
       );
     }).toList();
 
@@ -73,7 +74,9 @@ class ProductService {
       'description': product.description,
       'price': product.price,
       'stock': product.stock,
-      'image_url': product.imageUrl,
+      'image_url': (product.imageUrl == null || product.imageUrl!.trim().isEmpty)
+          ? null
+          : product.imageUrl!.trim(),
       'category_id': product.categoryId,
     });
   }
@@ -98,7 +101,10 @@ class ProductService {
           'description': product.description,
           'price': product.price,
           'stock': product.stock,
-          'image_url': product.imageUrl,
+          'image_url':
+              (product.imageUrl == null || product.imageUrl!.trim().isEmpty)
+              ? null
+              : product.imageUrl!.trim(),
           'category_id': product.categoryId,
         })
         .eq('id', product.id)
@@ -109,5 +115,25 @@ class ProductService {
         'Product with id ${product.id} not found or check table RLS.',
       );
     }
+  }
+
+  // uploads an image to the product-images bucket and returns its public link
+  Future<String> uploadImage(Uint8List bytes, String fileName) async {
+    final safeName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final path = '${DateTime.now().millisecondsSinceEpoch}_$safeName';
+
+    final lower = fileName.toLowerCase();
+    var contentType = 'image/jpeg';
+    if (lower.endsWith('.png')) contentType = 'image/png';
+    if (lower.endsWith('.webp')) contentType = 'image/webp';
+    if (lower.endsWith('.gif')) contentType = 'image/gif';
+
+    final bucket = _client.storage.from('product-images');
+    await bucket.uploadBinary(
+      path,
+      bytes,
+      fileOptions: FileOptions(contentType: contentType),
+    );
+    return bucket.getPublicUrl(path);
   }
 }

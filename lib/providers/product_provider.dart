@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:cs_elective_2/models/product_page.dart';
 import 'package:cs_elective_2/providers/product_filter_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,6 +41,10 @@ class ProductNotifier extends AsyncNotifier<ProductPage> {
     ref.invalidateSelf();
     ref.invalidate(maxPriceProvider);
     await future;
+  }
+
+  Future<String> uploadImage(Uint8List bytes, String fileName) {
+    return ref.read(productServiceProvider).uploadImage(bytes, fileName);
   }
 
   Future<void> addProduct(Product product) async {
